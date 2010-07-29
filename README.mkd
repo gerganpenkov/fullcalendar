@@ -2,6 +2,12 @@
 FullCalendar - Full-sized drag & drop event calendar
 ====================================================
 
+About this fork
+---------------
+
+This fork adds the option of selecting how many days to show in week-mode.
+It is not a general purpose fork.
+
 Development and testing
 -----------------------
 
