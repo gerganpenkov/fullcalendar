@@ -3,6 +3,7 @@
 -----------------------------------------------------------------------------*/
 
 setDefaults({
+  visibleDays: 7,
 	allDaySlot: true,
 	allDayText: 'all-day',
 	firstHour: 6,
@@ -42,7 +43,7 @@ views.agendaWeek = function(element, options, viewName) {
 				options
 			);
 			this.renderAgenda(
-				options.weekends ? 7 : 5,
+				options.visibleDays,
 				this.option('columnFormat')
 			);
 		}
