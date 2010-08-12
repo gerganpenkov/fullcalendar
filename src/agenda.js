@@ -78,6 +78,8 @@ function Agenda(element, options, methods, viewName) {
 		viewWidth, viewHeight,
 		savedScrollTop,
 		cachedEvents=[],
+		cachedColors=[],
+		cachedSpans=[],
 		daySegmentContainer,
 		slotSegmentContainer,
 		tm, firstDay,
@@ -88,6 +90,15 @@ function Agenda(element, options, methods, viewName) {
 			return bg.find('td:eq(' + col + ') div div');
 		}),
 		slotTopCache = {},
+		/*
+		debug = new jQuery.debug({
+					posTo : { x:'right', y:'bottom' },
+					width: '480px',
+					height: '50%',
+					itemDivider : '<hr>',
+					listDOM : [ 'tagName','id', 'innerText', 'href' ]
+					}),
+		*/
 		// ...
 		
 	view = $.extend(this, viewMethods, methods, {
@@ -95,6 +106,9 @@ function Agenda(element, options, methods, viewName) {
 		renderEvents: renderEvents,
 		rerenderEvents: rerenderEvents,
 		clearEvents: clearEvents,
+		renderColors: renderColors,
+		rerenderColors: rerenderColors,
+		clearColors: clearColors,		
 		setHeight: setHeight,
 		setWidth: setWidth,
 		beforeHide: function() {
@@ -143,6 +157,7 @@ function Agenda(element, options, methods, viewName) {
 		
 		var d0 = rtl ? addDays(cloneDate(view.visEnd), -1) : cloneDate(view.visStart),
 			d = cloneDate(d0),
+			dc = cloneDate(d0),
 			today = clearTime(new Date());
 		
 		if (!head) { // first time rendering, build from scratch
@@ -188,22 +203,52 @@ function Agenda(element, options, methods, viewName) {
 			d = zeroDate();
 			var maxd = addMinutes(cloneDate(d), maxMinute);
 			addMinutes(d, minMinute);
-			s = "<table>";
+			bodyTable = $('<table></table>');
 			for (i=0; d < maxd; i++) {
+				var dc = cloneDate(d0);
 				minutes = d.getMinutes();
-				s += "<tr class='" +
+                var row = $("<tr class='" +
 					(!i ? 'fc-first' : (!minutes ? '' : 'fc-minor')) +
 					"'><th class='fc-axis fc-leftmost " + tm + "-state-default'>" +
 					((!slotNormal || !minutes) ? formatDate(d, options.axisFormat) : '&nbsp;') + 
 					"</th><td class='fc-slot" + i + ' ' +
-						tm + "-state-default'><div style='position:relative'>&nbsp;</div></td></tr>";
+    						tm + "-state-default'><div style='position:relative'></div></td></tr>");
+                
+                				
+                for (kl=0; kl<colCnt; kl++)
+                {
+                    var tmpSpan = $("<span class='calender-cell calender-cell-day-"+dayIDs[dc.getDay()]+"'>&nbsp;</span>");
+                    if (colCnt == 1){
+                    	for (var kk=0;kk < dayIDs.length; kk ++){
+                    		if (i in cachedSpans) {
+                    			cachedSpans[i][dayIDs[kk]] = tmpSpan;
+                    		} else {
+                    			cachedSpans[i] = [];
+                    			cachedSpans[i][dayIDs[kk]] = tmpSpan;
+                    		}
+                    	}
+                    } else {
+                    	if (i in cachedSpans) {
+                    		cachedSpans[i][dayIDs[dc.getDay()]] = tmpSpan;
+                    	} else {
+                    		cachedSpans[i] = [];
+                    		cachedSpans[i][dayIDs[dc.getDay()]] = tmpSpan;
+                    	}
+                    }
+                    row.find('td div').append(tmpSpan);
+                 	addDays(dc, dis);
+					if (nwe) {
+						skipWeekend(dc, dis);
+					}
+                }
+                
+                bodyTable.append(row);
 				addMinutes(d, options.slotMinutes);
 				slotCnt++;
 			}
-			s += "</table>";
 			body = $("<div class='fc-agenda-body' style='position:relative;z-index:2;overflow:auto'/>")
 				.append(bodyContent = $("<div style='position:relative;overflow:hidden'>")
-					.append(bodyTable = $(s)))
+					.append(bodyTable))
 				.appendTo(element);
 			slotBind(body.find('td'));
 			
@@ -232,6 +277,7 @@ function Agenda(element, options, methods, viewName) {
 		}else{ // skeleton already built, just modify it
 		
 			clearEvents();
+			clearColors();
 			
 			// redo column header text and class
 			head.find('tr:first th').slice(1, -1).each(function() {
@@ -245,8 +291,21 @@ function Agenda(element, options, methods, viewName) {
 			
 			// change classes of background stripes
 			d = cloneDate(d0);
+			dmy = cloneDate(d0);
 			bg.find('td').each(function() {
 				this.className = this.className.replace(/^fc-\w+(?= )/, 'fc-' + dayIDs[d.getDay()]);
+				if (colCnt == 1) {
+					body.find('td span.calender-cell')
+						.removeClass(function (i, klass){
+							if (klass.indexOf('calender-cell-day-' === 0)){
+								return true;
+							} else {
+								return false;
+							}
+
+						})
+						.addClass('calender-cell-day-'+dayIDs[dmy.getDay()]);
+				}
 				if (+d == +today) {
 					$(this)
 						.removeClass('fc-not-today')
@@ -290,11 +349,17 @@ function Agenda(element, options, methods, viewName) {
 		
 		slotHeight = body.find('tr:first div').height() + 1;
 		
+		body.find('span.calender-cell').height(slotHeight);
 		bg.css({
 			top: head.find('tr').height(),
 			height: height
 		});
 		
+		// if the table ends up shorter than the allotted view, shrink the view to fit the table
+		var tableHeight=body.find('table:first').height();
+		if (tableHeight<body.height()) {
+			body.height(tableHeight);
+		}
 		if (dateChanged) {
 			resetScroll();
 		}
@@ -310,6 +375,7 @@ function Agenda(element, options, methods, viewName) {
 		
 		var topTDs = head.find('tr:first th'),
 			stripeTDs = bg.find('td'),
+			someTDs = body.find('span.calender-cell'),
 			clientWidth = body[0].clientWidth;
 			
 		bodyTable.width(clientWidth);
@@ -329,8 +395,17 @@ function Agenda(element, options, methods, viewName) {
 		colWidth = Math.floor((clientWidth - axisWidth) / colCnt);
 		setOuterWidth(stripeTDs.slice(0, -1), colWidth);
 		setOuterWidth(topTDs.slice(1, -2), colWidth);
+		setOuterWidth(someTDs, colWidth);
+		
+		var scrollbar=body.get().scrollHeight!=body.get().clientHeight;
+
+		if (scrollbar) {
 		setOuterWidth(topTDs.slice(-2, -1), clientWidth - axisWidth - colWidth*(colCnt-1));
 		
+		} else {
+			topTDs.slice(-1).hide();
+			$('tr.fc-all-day th').slice(-1).hide();
+		}
 		bg.css({
 			left: axisWidth,
 			width: clientWidth - axisWidth
@@ -406,8 +481,57 @@ function Agenda(element, options, methods, viewName) {
 		slotSegmentContainer.empty();
 	}
 	
+	function renderColors(colors) {
+		view.reportColors(cachedColors = colors);
+		var i, j, topI, bottomI,
+			len=colors.length;
+		for (i=0; i < len; i++){
+			var color = colors[i];
+			if (color.allDay) {
+				var tmp_start = addMinutes(cloneDate(color.start, true),minMinute);
+				var tmp_end = addMinutes(cloneDate(color.start, true),maxMinute);
+				topI = timeSlotPosition(tmp_start, tmp_start, false);
+				bottomI = timeSlotPosition(tmp_end, tmp_end, true);				
+			} else {
+				topI = timeSlotPosition(color.start, color.start, false);
+				bottomI = timeSlotPosition(color.start, color.end, true);
+			}
+			//debug.dump("Color ",i);
+			//debug.dump("Color uuid", color.event_uuid);
+			//debug.dump("Color Start", color.start.toString());
+			//debug.dump("Color End", color.end.toString());
+			//debug.dump("View Start", view.visStart.toString());
+			//debug.dump("View End", view.visEnd.toString());
+			if (
+					bottomI === 0 
+				|| 	topI === bottomI 
+				|| 	color.start > color.end 
+				|| 	view.visStart > color.start 
+				|| 	view.visEnd < color.end
+			) {
+				continue;
+			}
 	
+			for (j = topI; j<= bottomI; j++) {
+				if (j in cachedSpans && dayIDs[color.start.getDay()] in cachedSpans[j]){
+					cachedSpans[j][dayIDs[color.start.getDay()]].css('background-color','red');
+				} else {
+					alert ("shit");
+				}
+			}
 	
+		}
+
+	}	
+
+	function rerenderColors() {
+		clearEvents();
+		renderEvents(cachedColors);
+	}
+	
+	function clearColors() {
+		body.find('span.calender-cell').css('background-color','');
+	}
 	
 	
 	function compileDaySegs(events) {
@@ -617,10 +741,17 @@ function Agenda(element, options, methods, viewName) {
 	}
 	
 	function slotSegHtml(event, seg, className) {
-		return "<div class='" + className + event.className.join(' ') + "' style='position:absolute;z-index:8;top:" + seg.top + "px;left:" + seg.left + "px'>" +
-			"<a" + (event.url ? " href='" + htmlEscape(event.url) + "'" : '') + ">" +
+		if (event.color) {
+			color = " style='background-color:" + event.color + ";border-color:" + event.color + "' "; 
+			border = ";border-color:" + event.color; 
+		} else {
+			color = "";
+			border = "";
+		}
+		return "<div class='" + className + event.className.join(' ') + "' style='position:absolute;z-index:8;top:" + seg.top + "px;left:" + seg.left + "px" + border + "'>" +
+			"<a" + (event.url ? " href='" + htmlEscape(event.url) + "'" : '') + color + ">" +
 				"<span class='fc-event-bg'></span>" +
-				"<span class='fc-event-time'>" + htmlEscape(formatDates(event.start, event.end, view.option('timeFormat'))) + "</span>" +
+				"<span class='fc-event-time' " + color + ">" + htmlEscape(formatDates(event.start, event.end, view.option('timeFormat'))) + "</span>" +
 				"<span class='fc-event-title'>" + htmlEscape(event.title) + "</span>" +
 			"</a>" +
 			((event.editable || event.editable === undefined && options.editable) && !options.disableResizing && $.fn.resizable ?
@@ -959,6 +1090,24 @@ function Agenda(element, options, methods, viewName) {
 	}
 	
 	
+	function timeSlotPosition(day, time, ceil_flag) { // both date objects. day holds 00:00 of current day
+		day = cloneDate(day, true);
+		if (time <= addMinutes(cloneDate(day), minMinute)) {
+			time = addMinutes(cloneDate(day), minMinute)
+		}
+		if (time >= addMinutes(cloneDate(day), maxMinute)) {
+			time = addMinutes(cloneDate(day), maxMinute);
+		}
+		var slotI,
+			slotMinutes = options.slotMinutes,
+			minutes = time.getHours()*60 + time.getMinutes() - minMinute;
+			if (ceil_flag) {
+				slotI = Math.floor((minutes / slotMinutes)-1);
+			} else {
+				slotI = Math.floor(minutes / slotMinutes);
+			}
+			return slotI;
+	}	
 	
 	
 	/* Selecting

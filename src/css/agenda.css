@@ -65,6 +65,12 @@
 	height: 20px; /* slot height */
 	}
 	
+.fc .fc-agenda-body span.calender-cell {
+	float:left;
+	opacity:0.5;
+	filter: alpha(opacity=50);
+ }
+
 .fc .fc-agenda-body tr.fc-minor th,
 .fc .fc-agenda-body tr.fc-minor td {
 	border-top-style: dotted;

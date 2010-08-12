@@ -1,6 +1,11 @@
 
 FullCalendar - Full-sized drag & drop event calendar
 ====================================================
+About this fork
+---------------
+
+This fork adds the option of pulling different colors in agenda view for every segmen.
+
 
 Development and testing
 -----------------------

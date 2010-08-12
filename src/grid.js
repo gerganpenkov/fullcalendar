@@ -129,6 +129,9 @@ function Grid(element, options, methods, viewName) {
 		renderEvents: renderEvents,
 		rerenderEvents: rerenderEvents,
 		clearEvents: clearEvents,
+		renderColors: renderColors,
+		rerenderColors: rerenderColors,
+		clearColors: clearColors,		
 		setHeight: setHeight,
 		setWidth: setWidth,
 		defaultEventEnd: function(event) { // calculates an end if event doesnt have one, mostly for resizing
@@ -362,6 +365,14 @@ function Grid(element, options, methods, viewName) {
 		segmentContainer.empty();
 	}
 	
+	function renderColors(colors) {
+	}	
+
+	function rerenderColors() {
+	}
+	
+	function clearColors() {
+	}	
 	
 	function compileSegs(events) {
 		var d1 = cloneDate(view.visStart),

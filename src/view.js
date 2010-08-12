@@ -12,9 +12,10 @@ var viewMethods = {
 	 * - visStart
 	 * - visEnd
 	 * - defaultEventEnd(event)
-	 * - render(events)
+	 * - renderEvents(events)
 	 * - rerenderEvents()
-	 *
+	 * - renderColors(colors)
+	 * - rerenderColors()
 	 *
 	 * z-index reservations:
 	 * 3 - day-overlay
@@ -29,6 +30,7 @@ var viewMethods = {
 		this.element = element;
 		this.options = options;
 		this.eventsByID = {};
+		this.colorsByID = {};
 		this.eventElements = [];
 		this.eventElementsByID = {};
 		this.usedOverlays = [];
@@ -69,7 +71,18 @@ var viewMethods = {
 			}
 		}
 	},
-	
+	reportColors: function(colors) { // events are already normalized at this point
+		var i, len=colors.length, event,
+		colorsByID = this.colorsByID = {};
+		for (i=0; i<len; i++) {
+			color = colors[i];
+			if (colorsByID[color._id]) {
+				colorsByID[color._id].push(color);
+			}else{
+				colorsByID[color._id] = [color];
+			}
+		}
+	},	
 	
 	
 	// report when view creates an element for an event
@@ -84,14 +97,14 @@ var viewMethods = {
 		}
 	},
 	
-	
-	
 	// event element manipulation
-	
 	_clearEvents: function() { // only resets hashes
 		this.eventElements = [];
 		this.eventElementsByID = {};
-	},
+	},	
+	
+
+
 	
 	showEvents: function(event, exceptElement) {
 		this._eee(event, exceptElement, 'show');

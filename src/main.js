@@ -1,4 +1,3 @@
-
 var fc = $.fullCalendar = {};
 var views = fc.views = {};
 
@@ -137,6 +136,14 @@ $.fn.fullCalendar = function(options) {
 		eventSources.push(options.events);
 		delete options.events;
 	}
+
+	// pluck the 'colors' and 'colorSources' options
+	var colorSources = options.colorSources || [];
+	delete options.colorSources;
+	if (options.colors) {
+		colorSources.push(options.colors);
+		delete options.colors;
+	}
 	
 	// first event source reserved for 'sticky' events
 	eventSources.unshift([]);
@@ -257,9 +264,10 @@ $.fn.fullCalendar = function(options) {
 					view.render(date, inc || 0); // responsible for clearing events
 					setSize(true);
 					if (!eventStart || !options.lazyFetching || view.visStart < eventStart || view.visEnd > eventEnd) {
-						fetchAndRenderEvents();
+						fetchAndRender();
 					}else{
 						view.renderEvents(events); // don't refetch
+						view.renderColors(colors); // don't refetch
 					}
 				}
 				else if (view.sizeDirty || view.eventsDirty || !options.lazyFetching) {
@@ -269,8 +277,9 @@ $.fn.fullCalendar = function(options) {
 					}
 					if (options.lazyFetching) {
 						view.renderEvents(events); // don't refetch
+						view.renderColors(colors); // don't refetch
 					}else{
-						fetchAndRenderEvents();
+						fetchAndRender();
 					}
 				}
 				elementOuterWidth = element.outerWidth();
@@ -326,6 +335,23 @@ $.fn.fullCalendar = function(options) {
 				this.eventsDirty = true;
 			});
 		}
+
+		// called when any color objects have been added/removed/changed, rerenders
+		function colorsChanged() {
+			colorsDirty();
+			if (elementVisible()) {
+				view.clearColors();
+				view.renderColors(colors);
+				view.colorsDirty = false;
+			}
+		}
+		
+		// marks other views' colors as dirty
+		function colorsDirty() {
+			$.each(viewInstances, function() {
+				this.colorsDirty = true;
+			});
+		}
 		
 		// called when we know the element size has changed
 		function sizeChanged() {
@@ -353,31 +379,41 @@ $.fn.fullCalendar = function(options) {
 		-----------------------------------------------------------------------------*/
 		
 		var events = [],
-			eventStart, eventEnd;
+			eventStart, eventEnd,
+			colors = [],
+			colorStart, colorEnd;			
 		
 		// Fetch from ALL sources. Clear 'events' array and populate
-		function fetchEvents(callback) {
-			events = [];
-			eventStart = cloneDate(view.visStart);
-			eventEnd = cloneDate(view.visEnd);
-			var queued = eventSources.length,
+		function fetchAll(callback_event, callback_color) {
+			events = colors = [];
+			eventStart = colorStart = cloneDate(view.visStart);
+			eventEnd = colorEnd = cloneDate(view.visEnd);
+			var queued = eventSources.length + colorSources.length,
 				sourceDone = function() {
 					if (!--queued) {
-						if (callback) {
-							callback(events);
+						if (callback_event) {
+							callback_event(events);
+						}
+						if (callback_color) {
+							callback_color(colors);
 						}
 					}
-				}, i=0;
+				}, 
+				i=0;
 			for (; i<eventSources.length; i++) {
-				fetchEventSource(eventSources[i], sourceDone);
+				fetchSource(eventSources[i], sourceDone, true);
 			}
+			i = 0;
+			for (; i<colorSources.length; i++) {
+				fetchSource(colorSources[i], sourceDone, false);
+			}			
 		}
 		
 		// Fetch from a particular source. Append to the 'events' array
-		function fetchEventSource(src, callback) {
+		function fetchSource(src, callback, event_or_color) {
 			var prevViewName = view.name,
 				prevDate = cloneDate(date),
-				reportEvents = function(a) {
+				reportAllEvents  = function(a) {
 					if (prevViewName == view.name && +prevDate == +date && // protects from fast switching
 						$.inArray(src, eventSources) != -1) {              // makes sure source hasn't been removed
 							for (var i=0; i<a.length; i++) {
@@ -390,10 +426,29 @@ $.fn.fullCalendar = function(options) {
 							}
 						}
 				},
-				reportEventsAndPop = function(a) {
-					reportEvents(a);
-					popLoading();
+				reportAllColors = function(a) {
+					if (prevViewName == view.name && +prevDate == +date && // protects from fast switching
+						$.inArray(src, colorSources) != -1) {              // makes sure source hasn't been removed
+							for (var i=0; i<a.length; i++) {
+								normalizeEvent(a[i], options);
+								a[i].source = src;
+							}
+							colors = colors.concat(a);
+							if (callback) {
+								callback(a);
+							}
+						}
 				};
+			var	reportAllAndPop = function(a) {
+					if (event_or_color) {
+						reportAllEvents(a);
+					} else {
+						reportAllColors(a);
+					}
+					popLoading();
+			};
+
+				
 			if (typeof src == 'string') {
 				var params = {};
 				params[options.startParam] = Math.round(eventStart.getTime() / 1000);
@@ -407,27 +462,36 @@ $.fn.fullCalendar = function(options) {
 					dataType: 'json',
 					data: params,
 					cache: options.cacheParam || false, // don't let jquery prevent caching if cacheParam is being used
-					success: reportEventsAndPop
+					success: reportAllAndPop,
+					error: function (XMLHttpRequest, textStatus, errorThrown){
+						alert(textStatus);
+					}
 				});
 			}
 			else if ($.isFunction(src)) {
 				pushLoading();
-				src(cloneDate(eventStart), cloneDate(eventEnd), reportEventsAndPop);
+				src(cloneDate(eventStart), cloneDate(eventEnd), reportAllAndPop);
 			}
 			else {
-				reportEvents(src); // src is an array
+				if (event_or_color) {
+					reportAllEvents(src);
+				} else {
+					reportAllColors(src);
+				}
 			}
 		}
 		
 		
 		// for convenience
-		function fetchAndRenderEvents() {
-			fetchEvents(function(events) {
+		function fetchAndRender() {
+			fetchAll(
+			function(events) {
 				view.renderEvents(events); // maintain `this` in view
+			},
+			function(colors) {
+				view.renderColors(colors); // maintain `this` in view
 			});
 		}
-		
-		
 		
 		/* Loading State
 		-----------------------------------------------------------------------------*/
@@ -457,6 +521,7 @@ $.fn.fullCalendar = function(options) {
 				calcSize();
 				sizesDirty();
 				eventsDirty();
+				colorsDirty();
 				render();
 			},
 			
@@ -632,7 +697,7 @@ $.fn.fullCalendar = function(options) {
 		
 			addEventSource: function(source) {
 				eventSources.push(source);
-				fetchEventSource(source, eventsChanged);
+				fetchSource(source, eventsChanged, true);
 			},
 		
 			removeEventSource: function(source) {
@@ -647,9 +712,32 @@ $.fn.fullCalendar = function(options) {
 			},
 			
 			refetchEvents: function() {
-				fetchEvents(eventsChanged);
+				fetchAll(eventsChanged, colorsChanged);
 			},
 			
+			//
+			// Color Source
+			//
+		
+			addColorSource: function(source) {
+				colorSources.push(source);
+				fetchSource(source, colorsChanged, false);
+			},
+		
+			removeColorSource: function(source) {
+				colorSources = $.grep(colorSources, function(src) {
+					return src != source;
+				});
+				// remove all client events from that source
+				colors = $.grep(colors, function(e) {
+					return e.source != source;
+				});
+				colorsChanged();
+			},
+			
+			refetchColors: function() {
+				fetchAll(eventsChanged, colorsChanged);
+			},			
 			//
 			// selection
 			//
@@ -911,5 +999,6 @@ function normalizeEvent(event, options) {
 		event.className = [];
 	}
 }
+
 // TODO: if there is no start date, return false to indicate an invalid event
 
