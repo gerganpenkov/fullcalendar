@@ -400,8 +400,8 @@ function Agenda(element, options, methods, viewName) {
 		var scrollbar=body.get().scrollHeight!=body.get().clientHeight;
 
 		if (scrollbar) {
-		setOuterWidth(topTDs.slice(-2, -1), clientWidth - axisWidth - colWidth*(colCnt-1));
-		
+			setOuterWidth(topTDs.slice(-2, -1), clientWidth - axisWidth - colWidth*(colCnt-1));
+
 		} else {
 			topTDs.slice(-1).hide();
 			$('tr.fc-all-day th').slice(-1).hide();
