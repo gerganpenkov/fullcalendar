@@ -484,16 +484,18 @@ function Agenda(element, options, methods, viewName) {
 	
 	function renderColors(colors) {
 		view.reportColors(cachedColors = colors);
-		var i, j, topI, bottomI,
+		var i, j, topI, bottomI,tmp_start,tmp_end, 
 			len=colors.length;
 		for (i=0; i < len; i++){
 			var color = colors[i];
 			if (color.allDay) {
-				var tmp_start = addMinutes(cloneDate(color.start, true),minMinute);
-				var tmp_end = addMinutes(cloneDate(color.start, true),maxMinute);
+				tmp_start = addMinutes(cloneDate(color.start, true),minMinute);
+				tmp_end = addMinutes(cloneDate(color.start, true),maxMinute);
 				topI = timeSlotPosition(tmp_start, tmp_start, false);
 				bottomI = timeSlotPosition(tmp_end, tmp_end, true);				
 			} else {
+				tmp_start = cloneDate(color.start);
+				tmp_end = cloneDate(color.start);				
 				topI = timeSlotPosition(color.start, color.start, false);
 				bottomI = timeSlotPosition(color.start, color.end, true);
 			}
@@ -506,9 +508,9 @@ function Agenda(element, options, methods, viewName) {
 			if (
 					bottomI === 0 
 				|| 	topI === bottomI 
-				|| 	color.start > color.end 
-				|| 	view.visStart > color.start 
-				|| 	view.visEnd < color.end
+				|| 	tmp_start > tmp_end 
+				|| 	view.visStart > tmp_start 
+				|| 	view.visEnd < tmp_end
 			) {
 				continue;
 			}
