@@ -7,6 +7,14 @@ About this fork
 This fork adds the option of pulling different colors in agenda view for every segmen.
 
 
+About this fork
+---------------
+
+This fork adds the option of selecting how many days to show in week-mode.
+It is not a general purpose fork.
+
+New option 'visibleDays' has been added. It works with agendaWeek.
+
 Development and testing
 -----------------------
 
