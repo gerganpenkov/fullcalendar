@@ -515,7 +515,11 @@ function Agenda(element, options, methods, viewName) {
 	
 			for (j = topI; j<= bottomI; j++) {
 				if (j in cachedSpans && dayIDs[color.start.getDay()] in cachedSpans[j]){
-					cachedSpans[j][dayIDs[color.start.getDay()]].css('background-color','red');
+					if (color.color) {
+						cachedSpans[j][dayIDs[color.start.getDay()]].css('background-color',color.color);
+					} else {
+						cachedSpans[j][dayIDs[color.start.getDay()]].css('background-color','red');
+					}
 				} else {
 					alert ("shit");
 				}
