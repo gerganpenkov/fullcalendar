@@ -5,6 +5,7 @@ About this fork
 ---------------
 
 This fork adds the option of pulling different colors in agenda view for every segmen.
+It is not a general purpose fork.
 
 
 About this fork
