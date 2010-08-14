@@ -350,7 +350,7 @@ function Agenda(element, options, methods, viewName) {
 		
 		slotHeight = body.find('tr:first div').height() + 1;
 		
-		body.find('span.calender-cell').height(slotHeight);
+		body.find('span.calender-cell').height(body.find('tr:first div').height());
 		bg.css({
 			top: head.find('tr').height(),
 			height: height
@@ -376,7 +376,7 @@ function Agenda(element, options, methods, viewName) {
 		
 		var topTDs = head.find('tr:first th'),
 			stripeTDs = bg.find('td'),
-			someTDs = body.find('span.calender-cell'),
+			someDIVS = body.find('tr div'),
 			clientWidth = body[0].clientWidth;
 			
 		bodyTable.width(clientWidth);
@@ -396,7 +396,10 @@ function Agenda(element, options, methods, viewName) {
 		colWidth = Math.floor((clientWidth - axisWidth) / colCnt);
 		setOuterWidth(stripeTDs.slice(0, -1), colWidth);
 		setOuterWidth(topTDs.slice(1, -2), colWidth);
-		setOuterWidth(someTDs, colWidth);
+		someDIVS.each(function (index, element) {
+			$(this).children().not(':last').width(colWidth);
+			$(this).children().filter(':last').width(colWidth-1);
+		});
 		
 		var scrollbar=body.get().scrollHeight!=body.get().clientHeight;
 
