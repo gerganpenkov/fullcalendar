@@ -349,8 +349,11 @@ function Agenda(element, options, methods, viewName) {
 		body.height(height - head.height());
 		
 		slotHeight = body.find('tr:first div').height() + 1;
-		
-		body.find('span.calender-cell').height(body.find('tr:first div').height());
+		var tempSlotHeight = body.find('tr:first div').height();
+		if (jQuery.browser.msie && jQuery.browser.version.substr(0,1)<7) {
+			body.find('span.calender-cell').height(tempSlotHeight*2);
+		}
+		body.find('span.calender-cell').height(tempSlotHeight);		
 		bg.css({
 			top: head.find('tr').height(),
 			height: height
