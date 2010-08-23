@@ -462,10 +462,7 @@ $.fn.fullCalendar = function(options) {
 					dataType: 'json',
 					data: params,
 					cache: options.cacheParam || false, // don't let jquery prevent caching if cacheParam is being used
-					success: reportAllAndPop,
-					error: function (XMLHttpRequest, textStatus, errorThrown){
-						alert(textStatus);
-					}
+					success: reportAllAndPop
 				});
 			}
 			else if ($.isFunction(src)) {

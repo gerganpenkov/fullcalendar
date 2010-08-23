@@ -66,10 +66,17 @@
 	}
 	
 .fc .fc-agenda-body span.calender-cell {
+	display: inline-block;
 	float:left;
 	opacity:0.5;
 	filter: alpha(opacity=50);
- }
+	margin:0;
+	padding: 0;
+	zoom: 1;
+	height: 1%;
+	*display: inline;
+}
+
 
 .fc .fc-agenda-body tr.fc-minor th,
 .fc .fc-agenda-body tr.fc-minor td {

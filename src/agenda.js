@@ -354,19 +354,16 @@ function Agenda(element, options, methods, viewName) {
 			body.find('span.calender-cell').height(tempSlotHeight*2);
 		}
 		body.find('span.calender-cell').height(tempSlotHeight);		
+		
+		height = bodyTable.height() + head.height() - head.find('.fc-first').height();
+		
 		bg.css({
 			top: head.find('tr').height(),
 			height: height
 		});
-		
-		// if the table ends up shorter than the allotted view, shrink the view to fit the table
-		var tableHeight=body.find('table:first').height();
-		if (tableHeight<body.height()) {
-			body.height(tableHeight);
-		}
 		if (dateChanged) {
 			resetScroll();
-		}
+		}		
 	}
 	
 	
@@ -404,15 +401,9 @@ function Agenda(element, options, methods, viewName) {
 			$(this).children().filter(':last').width(colWidth-1);
 		});
 		
-		var scrollbar=body.get().scrollHeight!=body.get().clientHeight;
 
-		if (scrollbar) {
-			setOuterWidth(topTDs.slice(-2, -1), clientWidth - axisWidth - colWidth*(colCnt-1));
+		setOuterWidth(topTDs.slice(-2, -1), clientWidth - axisWidth - colWidth*(colCnt-1));
 
-		} else {
-			topTDs.slice(-1).hide();
-			$('tr.fc-all-day th').slice(-1).hide();
-		}
 		bg.css({
 			left: axisWidth,
 			width: clientWidth - axisWidth
@@ -505,12 +496,7 @@ function Agenda(element, options, methods, viewName) {
 				topI = timeSlotPosition(color.start, color.start, false);
 				bottomI = timeSlotPosition(color.start, color.end, true);
 			}
-			//debug.dump("Color ",i);
-			//debug.dump("Color uuid", color.event_uuid);
-			//debug.dump("Color Start", color.start.toString());
-			//debug.dump("Color End", color.end.toString());
-			//debug.dump("View Start", view.visStart.toString());
-			//debug.dump("View End", view.visEnd.toString());
+	
 			if (
 					bottomI === 0 
 				|| 	topI === bottomI 
@@ -529,7 +515,7 @@ function Agenda(element, options, methods, viewName) {
 						cachedSpans[j][dayIDs[color.start.getDay()]].css('background-color','red');
 					}
 				} else {
-					alert ("shit");
+					alert ("Problem");
 				}
 			}
 	
