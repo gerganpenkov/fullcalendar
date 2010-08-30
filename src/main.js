@@ -72,7 +72,8 @@ var defaults = {
 	//selectable: false,
 	unselectAuto: true,
 	
-	dropAccept: '*'
+	dropAccept: '*',
+	cutTextToFit: true
 	
 };
 
@@ -628,6 +629,7 @@ $.fn.fullCalendar = function(options) {
 						e.allDay = event.allDay;
 						e.className = event.className;
 						e.editable = event.editable;
+						e.resizable = event.resizable;
 						normalizeEvent(e, options);
 					}
 				}

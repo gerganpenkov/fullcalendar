@@ -703,7 +703,7 @@ function _renderDaySegs(segs, rowCnt, view, minLeft, maxLeft, getRow, dayContent
 					:'') +
 					"<span class='fc-event-title'>" + htmlEscape(event.title) + "</span>" +
 				"</a>" +
-				((event.editable || event.editable === undefined && options.editable) && !options.disableResizing && $.fn.resizable ?
+				((event.editable || event.editable === undefined && options.editable) && (event.resizable || event.resizable === undefined) && !options.disableResizing && $.fn.resizable ?
 					"<div class='ui-resizable-handle ui-resizable-" + (rtl ? 'w' : 'e') + "'></div>"
 					: '') +
 			"</div>";
@@ -712,7 +712,7 @@ function _renderDaySegs(segs, rowCnt, view, minLeft, maxLeft, getRow, dayContent
 	}
 	segmentContainer[0].innerHTML = html; // faster than html()
 	eventElements = segmentContainer.children();
-	
+
 	// retrieve elements, run through eventRender callback, bind handlers
 	for (i=0; i<segCnt; i++) {
 		seg = segs[i];
@@ -760,6 +760,32 @@ function _renderDaySegs(segs, rowCnt, view, minLeft, maxLeft, getRow, dayContent
 		}
 	}
 	
+	if (options.cutTextToFit) {
+		var aElement = eventElements.first().children('a:first');
+		var aFontSize = aElement.css('font-size');
+		var aTextDecoration = aElement.css('text-decoration');
+		var ellipsisText = '...';
+		var ellipsisWidth = detectWidth(ellipsisText, aFontSize, aTextDecoration);
+		eventElements.each(function(index, element){
+				var eventSpan = $(this).find('.fc-event-title:first');
+	
+				var timeWidth = $(this).find('.fc-event-time:first').width();
+				var eventWidth = $(this).children('a:first').width() - (timeWidth?(timeWidth+5):0);
+				var eventText = eventSpan.text();
+	
+				var currentWidth = detectWidth(eventText, aFontSize, aTextDecoration);
+				if(eventWidth < currentWidth) {
+					var charWidth = currentWidth / eventText.length;
+					var maxChars = ~~((eventWidth - (ellipsisWidth+5)) / charWidth);
+					var possibleWidth = detectWidth(eventText.substring(0, maxChars) + ellipsisText, aFontSize, aTextDecoration);
+					do  {
+						possibleWidth = detectWidth(eventText.substring(0, maxChars+1) + ellipsisText, aFontSize, aTextDecoration);
+					} while (possibleWidth < eventWidth && maxChars++ && maxChars < eventText.length);
+					eventSpan.text(eventText.substring(0, maxChars) + ellipsisText);
+				}
+			}
+		);
+	}		
 	// record event heights
 	for (i=0; i<segCnt; i++) {
 		seg = segs[i];
@@ -802,7 +828,6 @@ function _renderDaySegs(segs, rowCnt, view, minLeft, maxLeft, getRow, dayContent
 			view.trigger('eventAfterRender', event, event, eventElement);
 		}
 	}
-	
 }
 
 

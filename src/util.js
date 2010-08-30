@@ -592,5 +592,19 @@ function enableTextSelection(element) {
 }
 */
 
+var detectedCharWidths = {};
+function detectWidth(testText, fontSize, textDecoration){
+    var val = testText || "a b c d e f 1 2 3 4 5 6 A B C D E F ! ! %"; //correct detection depends on this more then anything
+    if(!detectedCharWidths[val]){
+    	var $inp = $("<span>", {
+    		"text":val,
+    		"css": {"background":"none", "margin":0, "padding":0, "overflow":"visible", "width":"auto", "color":"#FFF", "font-size": fontSize, "text-decoration": textDecoration}
+    	});
+		$('#content').append($inp);
 
+    	detectedCharWidths[val] = $inp.width();
+    	$inp.remove();
+    }
+    return detectedCharWidths[val];
+ }
 

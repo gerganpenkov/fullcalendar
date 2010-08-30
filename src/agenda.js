@@ -753,7 +753,7 @@ function Agenda(element, options, methods, viewName) {
 				"<span class='fc-event-time' " + color + ">" + htmlEscape(formatDates(event.start, event.end, view.option('timeFormat'))) + "</span>" +
 				"<span class='fc-event-title'>" + htmlEscape(event.title) + "</span>" +
 			"</a>" +
-			((event.editable || event.editable === undefined && options.editable) && !options.disableResizing && $.fn.resizable ?
+			((event.editable || event.editable === undefined && options.editable) && (event.resizable || event.resizable === undefined) && !options.disableResizing && $.fn.resizable ?
 				"<div class='ui-resizable-handle ui-resizable-s'>=</div>"
 				: '') +
 		"</div>";
